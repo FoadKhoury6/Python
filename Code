@@ -1,0 +1,68 @@
+import cv2
+import cvzone
+from cvzone.SelfiSegmentationModule import SelfiSegmentation
+import os
+
+bg=0.5
+cap = cv2.VideoCapture(0)
+cap.set(3,640)
+cap.set(4,480)
+cap.set(cv2.CAP_PROP_FPS,60)
+
+
+segmentor = SelfiSegmentation()
+fpsReader = cvzone.FPS()
+
+listImg = os.listdir("images")
+imgList = []
+for imgPath in listImg:
+    img = cv2.imread(f'images/{imgPath}')
+    imgList.append(img)
+imgIndex=0
+backFlag=True
+ColorFlag=False
+R=0
+G=0
+B=0
+while True:
+    success, img = cap.read()
+    if(backFlag):
+        if(ColorFlag):
+            imgOut = segmentor.removeBG(img,(R,G,B),threshold=bg)
+        else:
+            imgOut = segmentor.removeBG(img,imgList[imgIndex],threshold=bg)
+    else :
+        imgOut = img
+
+    imgStacked = cvzone.stackImages([img,imgOut],2,1)
+    _,imgStacked = fpsReader.update(imgStacked,color=(0,0,255))
+
+    cv2.imshow("Image", imgStacked)
+    key = cv2.waitKey(1)
+    if key == ord('8'):
+        bg+=0.1
+    if key == ord('2'):
+        bg-=0.1
+    if key == ord('a') and imgIndex>0:
+        imgIndex-=1
+    if key == ord('d') and imgIndex < len(listImg) - 1:
+        imgIndex += 1
+    if key == ord('f'):
+        backFlag=(not backFlag)
+    if key == ord('c'):
+        ColorFlag=(not ColorFlag)
+    if key == ord('q'):
+        break
+    if key == ord('y') and R<250:
+        R+=10
+    if key == ord('h')and R>0:
+        R-=10
+    if key == ord('u')and G<250:
+        G+=10
+    if key == ord('j')and G>0:
+        G-=10
+    if key == ord('i')and B<250:
+        B+=10
+    if key == ord('k')and B>0:
+        B-=10
+
